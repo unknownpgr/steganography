@@ -12,10 +12,9 @@
         box-sizing: border-box;
       }
 
-      /* 상단 네비게이션 (Encoder 페이지 이동) */
       #nav-container {
         margin-bottom: 1rem;
-        text-align: right; /* 버튼을 오른쪽에 배치 */
+        text-align: right;
       }
       #nav-container a button {
         padding: 0.5rem 1rem;
@@ -23,7 +22,6 @@
         cursor: pointer;
       }
 
-      /* 이미지가 가로줄로 나란히 보이도록 */
       #image-container {
         height: 500px;
         display: flex;
@@ -41,7 +39,6 @@
         border-radius: 4px;
       }
 
-      /* 입력 폼과 버튼을 한 줄로 정렬 */
       #input-container {
         display: flex;
         flex-direction: row;
@@ -51,7 +48,7 @@
       }
 
       #input-container input[type="file"] {
-        flex: 1; /* 파일 입력창이 가로를 적당히 차지하게 */
+        flex: 1;
       }
 
       #input-container button {
@@ -59,14 +56,11 @@
         font-size: 1rem;
         cursor: pointer;
       }
-
-      /* 결과 텍스트도 한 줄로 정렬되도록 */
       #result-container {
         display: flex;
         flex-direction: row;
         align-items: center;
         gap: 0.5rem;
-        /* 텍스트를 약간 왼쪽에 붙이고 싶으면 justify-content:left; */
         justify-content: center;
         min-height: 2rem;
         border-top: 1px solid #ddd;
@@ -76,14 +70,13 @@
       #result-text {
         font-size: 1rem;
         color: #333;
-        word-break: break-all; /* 길어지는 텍스트 줄바꿈 대응 */
+        word-break: break-all; /* 줄 바꿈 !*/
       }
     </style>
   </head>
 
   <body>
     <div class="container">
-      <!-- 1) 상단에 Encoder 페이지로 이동하는 버튼 -->
       <div id="nav-container">
         <a href="encoder.html">
           <button>Encoder 페이지로 이동</button>
@@ -92,20 +85,17 @@
 
       <h1>Image Decoder</h1>
 
-      <!-- 2) 두 이미지를 가로로 나란히 보여주는 영역 -->
       <div id="image-container">
         <img id="image-original" src="./image.png" alt="Original Image" />
         <img id="image-encoded" src="./image.png" alt="Encoded Image" />
       </div>
 
-      <!-- 3) 입력 파일과 디코드 버튼을 한 줄로 정렬 -->
       <div id="input-container">
         <input type="file" id="input-original" accept="image/*" />
         <input type="file" id="input-encoded" accept="image/*" />
         <button id="decode-button">Decode</button>
       </div>
 
-      <!-- 4) 결과 텍스트를 한 줄로 표시 -->
       <div id="result-container">
         <p id="result-text"></p>
       </div>
@@ -152,7 +142,6 @@
         })
           .then((response) => response.json())
           .then((data) => {
-            // 서버로부터 받은 결과를 한 줄에 표시
             resultText.textContent = data.result;
           })
           .catch((error) => {
