@@ -6,11 +6,16 @@ import uuid
 import uvicorn
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
 from encoder import decode_image, encode_image, get_available_bytes
 
 app = FastAPI()
 
+
+@app.get("/")
+async def handle_root():
+    return RedirectResponse(url="/index.html")
 
 @app.get("/get-available-bytes")
 async def handle_get_available_bytes(width: int, height: int):
