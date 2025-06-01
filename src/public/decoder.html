@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    #image-container {
+      height: 500px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    #image-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Image Decoder</h1>
+    <div id="image-container">
+      <img id="image-original" src="./image.png" alt="Image">
+      <img id="image-encoded" src="./image.png" alt="Image">
+    </div>
+    <div id="input-container">
+      <input type="file" id="input-original" accept="image/*">
+      <input type="file" id="input-encoded" accept="image/*">
+      <button id="decode-button">Decode</button>
+    </div>
+    <div id="result-container">
+      <p id="result-text"></p>
+    </div>
+  </div>
+  <script>
+    const imageOriginal = document.getElementById("image-original");
+    const imageEncoded = document.getElementById("image-encoded");
+    const inputOriginal = document.getElementById("input-original");
+    const inputEncoded = document.getElementById("input-encoded");
+    const decodeButton = document.getElementById("decode-button");
+    const resultText = document.getElementById("result-text");
+
+    let originalImage = null;
+    let encodedImage = null;
+
+    inputOriginal.addEventListener("change", () => {
+      const file = inputOriginal.files[0];
+      imageOriginal.src = URL.createObjectURL(file);
+      originalImage = file;
+    });
+
+    inputEncoded.addEventListener("change", () => {
+      const file = inputEncoded.files[0];
+      imageEncoded.src = URL.createObjectURL(file);
+      encodedImage = file;
+    });
+
+    decodeButton.addEventListener("click", () => {
+      const formData = new FormData();
+      formData.append("original_image", originalImage);
+      formData.append("encoded_image", encodedImage);
+      fetch("/decode-image", {
+        method: "POST",
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          resultText.textContent = data.result;
+        })
+        .catch(error => {
+          console.error("Error:", error);
+        });
+    });
+  </script>
+</body>
+
+</html>

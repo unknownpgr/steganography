@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Encoder</title>
+  <style>
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    #image-container {
+      height: 500px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    #image-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    #input-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Image Encoder</h1>
+    <div id="image-container">
+      <img id="image" src="./image.png" alt="Image">
+      <img id="image-result" src="./image.png" alt="Image">
+    </div>
+    <div id="input-container">
+      <input type="file" name="file" id="file-input">
+      <textarea id="input-text"></textarea>
+      <button id="upload-button">Upload</button>
+    </div>
+    <div id="infer-bytes-result"></div>
+  </div>
+  <script>
+    const image = document.getElementById('image');
+    const imageResult = document.getElementById('image-result');
+    const fileInput = document.getElementById('file-input');
+    const inferResultText = document.getElementById('infer-bytes-result');
+    const inputText = document.getElementById('input-text');
+    const uploadButton = document.getElementById('upload-button');
+
+    let availableBytes = 0;
+
+    async function waitImageLoaded(image) {
+      return new Promise((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject();
+      });
+    }
+
+    async function inferBytes() {
+      image.src = URL.createObjectURL(fileInput.files[0]);
+      await waitImageLoaded(image);
+      const width = image.naturalWidth;
+      const height = image.naturalHeight;
+      const response = await fetch(`/get-available-bytes?width=${width}&height=${height}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      availableBytes = data.available_bytes;
+      inferResultText.innerHTML = `Available bytes: ${availableBytes}`;
+    }
+
+    async function checkInputText() {
+      // Convert input text to bytes
+      const inputTextValue = inputText.value;
+      const encoder = new TextEncoder('utf-8');
+      const encoded = encoder.encode(inputTextValue);
+
+      // Check if the input text is too long
+      inferResultText.innerHTML = `(${encoded.length} / ${availableBytes})`;
+    }
+
+    async function encodeImage() {
+      const formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+      formData.append('input_text', inputText.value);
+      const response = await fetch('/encode-image', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      imageResult.src = `/images/${data.new_image_path}`;
+    }
+
+    fileInput.addEventListener('change', inferBytes);
+    inputText.addEventListener('input', checkInputText);
+    uploadButton.addEventListener('click', encodeImage);
+  </script>
+</body>
+
+</html>
