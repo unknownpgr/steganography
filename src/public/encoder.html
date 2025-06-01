@@ -1,111 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Encoder</title>
+    <style>
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Encoder</title>
-  <style>
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
+      #image-container {
+        height: 500px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+      }
 
-    #image-container {
-      height: 500px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-    }
+      #image-container img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
 
-    #image-container img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
+      #input-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
 
-    #input-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-  </style>
-</head>
+      /* Decode 버튼을 중앙 정렬하고 싶다면 추가 스타일 */
+      #decode-button-container {
+        margin-top: 2rem;
+        text-align: center;
+      }
+      #decode-button-container button {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
 
-<body>
-  <div class="container">
-    <h1>Image Encoder</h1>
-    <div id="image-container">
-      <img id="image" src="./image.png" alt="Image">
-      <img id="image-result" src="./image.png" alt="Image">
+  <body>
+    <div class="container">
+      <h1>Image Encoder</h1>
+      <div id="image-container">
+        <img id="image" src="./image.png" alt="Image" />
+        <img id="image-result" src="./image.png" alt="Image" />
+      </div>
+      <div id="input-container">
+        <input type="file" name="file" id="file-input" />
+        <div id="infer-bytes-result"></div>
+        <textarea
+          id="input-text"
+          placeholder="여기에 텍스트를 입력하세요"
+        ></textarea>
+        <button id="upload-button">Encode</button>
+      </div>
+
+      <!--  여기서부터 Decoder 페이지로 이동하는 버튼  -->
+      <div id="decode-button-container">
+        <!-- anchor 태그 내부에 버튼을 넣어, 누르면 decoder.html로 이동 -->
+        <a href="decoder.html"><button>Decoder 페이지로 이동</button></a>
+      </div>
     </div>
-    <div id="input-container">
-      <input type="file" name="file" id="file-input">
-      <div id="infer-bytes-result"></div>
-      <textarea id="input-text"></textarea>
-      <button id="upload-button">Encode</button>
-    </div>
-  </div>
-  <script>
-    const image = document.getElementById('image');
-    const imageResult = document.getElementById('image-result');
-    const fileInput = document.getElementById('file-input');
-    const inferResultText = document.getElementById('infer-bytes-result');
-    const inputText = document.getElementById('input-text');
-    const uploadButton = document.getElementById('upload-button');
 
-    let availableBytes = 0;
+    <script>
+      const image = document.getElementById("image");
+      const imageResult = document.getElementById("image-result");
+      const fileInput = document.getElementById("file-input");
+      const inferResultText = document.getElementById("infer-bytes-result");
+      const inputText = document.getElementById("input-text");
+      const uploadButton = document.getElementById("upload-button");
 
-    async function waitImageLoaded(image) {
-      return new Promise((resolve, reject) => {
-        image.onload = () => resolve();
-        image.onerror = () => reject();
-      });
-    }
+      let availableBytes = 0;
 
-    async function inferBytes() {
-      image.src = URL.createObjectURL(fileInput.files[0]);
-      await waitImageLoaded(image);
-      const width = image.naturalWidth;
-      const height = image.naturalHeight;
-      const response = await fetch(`/get-available-bytes?width=${width}&height=${height}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      availableBytes = data.available_bytes;
-      inferResultText.innerHTML = `Available bytes: ${availableBytes}`;
-    }
+      async function waitImageLoaded(image) {
+        return new Promise((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject();
+        });
+      }
 
-    async function checkInputText() {
-      // Convert input text to bytes
-      const inputTextValue = inputText.value;
-      const encoder = new TextEncoder('utf-8');
-      const encoded = encoder.encode(inputTextValue);
+      async function inferBytes() {
+        // 1) 업로드된 이미지를 미리보기로 띄우고 크기를 측정
+        image.src = URL.createObjectURL(fileInput.files[0]);
+        await waitImageLoaded(image);
+        const width = image.naturalWidth;
+        const height = image.naturalHeight;
 
-      // Check if the input text is too long
-      inferResultText.innerHTML = `(${encoded.length} / ${availableBytes})`;
-    }
+        // 2) 서버에 width/height를 전송해서 사용 가능한 바이트 수를 받아옴
+        const response = await fetch(
+          `/get-available-bytes?width=${width}&height=${height}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const data = await response.json();
+        availableBytes = data.available_bytes;
+        inferResultText.innerHTML = `Available bytes: ${availableBytes}`;
+      }
 
-    async function encodeImage() {
-      const formData = new FormData();
-      formData.append('image', fileInput.files[0]);
-      formData.append('input_text', inputText.value);
-      const response = await fetch('/encode-image', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      imageResult.src = `/images/${data.new_image_path}`;
-    }
+      async function checkInputText() {
+        // 입력된 텍스트를 UTF-8로 인코딩해서 바이트 길이를 계산
+        const inputTextValue = inputText.value;
+        const encoder = new TextEncoder("utf-8");
+        const encoded = encoder.encode(inputTextValue);
 
-    fileInput.addEventListener('change', inferBytes);
-    inputText.addEventListener('input', checkInputText);
-    uploadButton.addEventListener('click', encodeImage);
-  </script>
-</body>
+        // (예) “(3 / 1350)”처럼 현재 사용 중량/최대 사용 가능 바이트 수를 표시
+        inferResultText.innerHTML = `(${encoded.length} / ${availableBytes})`;
+      }
 
+      async function encodeImage() {
+        // 1) FormData에 이미지 파일과 텍스트를 담아서 POST 요청
+        const formData = new FormData();
+        formData.append("image", fileInput.files[0]);
+        formData.append("input_text", inputText.value);
+
+        // 2) 서버의 /encode-image 엔드포인트로 전송
+        const response = await fetch("/encode-image", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+
+        // 3) 서버가 돌려준 새 이미지 경로를 받아와서 <img>에 설정
+        imageResult.src = `/images/${data.new_image_path}`;
+
+        // (선택) 인코딩 완료 후 텍스트 박스를 비우거나, 버튼을 비활성화하고 싶으면 여기에 추가.
+        // 예: inputText.value = '';
+        //     uploadButton.disabled = true;
+      }
+
+      // 이벤트 바인딩
+      fileInput.addEventListener("change", inferBytes);
+      inputText.addEventListener("input", checkInputText);
+      uploadButton.addEventListener("click", encodeImage);
+    </script>
+  </body>
 </html>
