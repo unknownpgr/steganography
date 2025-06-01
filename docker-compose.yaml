@@ -1,0 +1,7 @@
+services:
+  steganography:
+    build: .
+networks:
+  default:
+    name: reverse-proxy
+    external: true
