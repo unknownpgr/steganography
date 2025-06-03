@@ -1,111 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Encoder</title>
+    <style>
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 1rem;
+        box-sizing: border-box;
+      }
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Encoder</title>
-  <style>
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
+      #image-container {
+        height: 500px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
 
-    #image-container {
-      height: 500px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-    }
+      #image-container img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
 
-    #image-container img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
+      #input-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
 
-    #input-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-  </style>
-</head>
+      #input-container input[type="file"] {
+        flex: 1;
+      }
 
-<body>
-  <div class="container">
-    <h1>Image Encoder</h1>
-    <div id="image-container">
-      <img id="image" src="./image.png" alt="Image">
-      <img id="image-result" src="./image.png" alt="Image">
+      #input-container textarea {
+        width: 100%;
+        height: 100px;
+        resize: vertical;
+      }
+
+      #input-container button {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      #decode-button-container {
+        margin-top: 2rem;
+        text-align: center;
+        display: none;
+      }
+
+      #decode-button-container a button {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Image Encoder</h1>
+      <div id="image-container">
+        <img id="image" src="./image.png" alt="Original Image" />
+        <img id="image-result" src="./image.png" alt="Encoded Image" />
+      </div>
+      <div id="input-container">
+        <input type="file" name="file" id="file-input" />
+        <div id="infer-bytes-result"></div>
+        <textarea
+          id="input-text"
+          placeholder="여기에 텍스트를 입력하세요"
+        ></textarea>
+        <button id="upload-button">Encode</button>
+      </div>
+      <div id="decode-button-container">
+        <a href="decoder.html">
+          <button>Decoder 페이지로 이동</button>
+        </a>
+      </div>
     </div>
-    <div id="input-container">
-      <input type="file" name="file" id="file-input">
-      <div id="infer-bytes-result"></div>
-      <textarea id="input-text"></textarea>
-      <button id="upload-button">Encode</button>
-    </div>
-  </div>
-  <script>
-    const image = document.getElementById('image');
-    const imageResult = document.getElementById('image-result');
-    const fileInput = document.getElementById('file-input');
-    const inferResultText = document.getElementById('infer-bytes-result');
-    const inputText = document.getElementById('input-text');
-    const uploadButton = document.getElementById('upload-button');
 
-    let availableBytes = 0;
+    <script>
+      const image = document.getElementById("image");
+      const imageResult = document.getElementById("image-result");
+      const fileInput = document.getElementById("file-input");
+      const inferResultText = document.getElementById("infer-bytes-result");
+      const inputText = document.getElementById("input-text");
+      const uploadButton = document.getElementById("upload-button");
+      const decodeButtonContainer = document.getElementById(
+        "decode-button-container"
+      );
 
-    async function waitImageLoaded(image) {
-      return new Promise((resolve, reject) => {
-        image.onload = () => resolve();
-        image.onerror = () => reject();
-      });
-    }
+      let availableBytes = 0;
 
-    async function inferBytes() {
-      image.src = URL.createObjectURL(fileInput.files[0]);
-      await waitImageLoaded(image);
-      const width = image.naturalWidth;
-      const height = image.naturalHeight;
-      const response = await fetch(`/get-available-bytes?width=${width}&height=${height}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      availableBytes = data.available_bytes;
-      inferResultText.innerHTML = `Available bytes: ${availableBytes}`;
-    }
+      async function waitImageLoaded(imgElement) {
+        return new Promise((resolve, reject) => {
+          imgElement.onload = () => resolve();
+          imgElement.onerror = () => reject();
+        });
+      }
 
-    async function checkInputText() {
-      // Convert input text to bytes
-      const inputTextValue = inputText.value;
-      const encoder = new TextEncoder('utf-8');
-      const encoded = encoder.encode(inputTextValue);
+      async function inferBytes() {
+        image.src = URL.createObjectURL(fileInput.files[0]);
+        await waitImageLoaded(image);
+        const width = image.naturalWidth;
+        const height = image.naturalHeight;
+        const response = await fetch(
+          `/get-available-bytes?width=${width}&height=${height}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const data = await response.json();
+        availableBytes = data.available_bytes;
+        inferResultText.innerHTML = `Available bytes: ${availableBytes}`;
+      }
 
-      // Check if the input text is too long
-      inferResultText.innerHTML = `(${encoded.length} / ${availableBytes})`;
-    }
+      async function checkInputText() {
+        const inputTextValue = inputText.value;
+        const encoder = new TextEncoder("utf-8");
+        const encoded = encoder.encode(inputTextValue);
+        inferResultText.innerHTML = `(${encoded.length} / ${availableBytes})`;
+      }
 
-    async function encodeImage() {
-      const formData = new FormData();
-      formData.append('image', fileInput.files[0]);
-      formData.append('input_text', inputText.value);
-      const response = await fetch('/encode-image', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      imageResult.src = `/images/${data.new_image_path}`;
-    }
+      async function encodeImage() {
+        const formData = new FormData();
+        formData.append("image", fileInput.files[0]);
+        formData.append("input_text", inputText.value);
+        const response = await fetch("/encode-image", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        imageResult.src = `/images/${data.new_image_path}`;
+        decodeButtonContainer.style.display = "block";
+      }
 
-    fileInput.addEventListener('change', inferBytes);
-    inputText.addEventListener('input', checkInputText);
-    uploadButton.addEventListener('click', encodeImage);
-  </script>
-</body>
-
+      fileInput.addEventListener("change", inferBytes);
+      inputText.addEventListener("input", checkInputText);
+      uploadButton.addEventListener("click", encodeImage);
+    </script>
+  </body>
 </html>
